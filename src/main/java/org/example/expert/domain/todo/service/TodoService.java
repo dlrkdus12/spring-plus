@@ -17,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -48,20 +50,40 @@ public class TodoService {
         );
     }
 
-    public Page<TodoResponse> getTodos(int page, int size) {
+    public Page<TodoResponse> getTodos(LocalDateTime startDate, LocalDateTime endDate, String weather, int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        Page<Todo> todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
+        // 날씨 검색만 요청된 경우
+        if (weather != null && startDate == null && endDate == null) {
+            return mapToTodoResponse(todoRepository.findAllByWeatherOrderByModifiedAtDesc(weather, pageable));
+        }
 
-        return todos.map(todo -> new TodoResponse(
+        // 수정일 기준 기간 검색이 요청된 경우
+        if (startDate != null || endDate != null) {
+            return mapToTodoResponse(todoRepository.findAllByModifiedAtBetween(startDate, endDate, pageable));
+        }
+
+        // 날씨나 기간 검색 조건이 없는 경우 예외 처리
+        throw new IllegalArgumentException("검색 조건을 입력해야 합니다. 날씨 또는 날짜 범위를 지정해 주세요.");
+    }
+
+    // Todo를 TodoResponse로 매핑하는 메서드(메서드 참조)
+    private Page<TodoResponse> mapToTodoResponse(Page<Todo> todos) {
+        return todos.map(this::mapToTodoResponse);
+    }
+
+    // 단일 Todo를 TodoResponse로 매핑하는 메서드
+    private TodoResponse mapToTodoResponse(Todo todo) {
+        User user = todo.getUser();
+        return new TodoResponse(
                 todo.getId(),
                 todo.getTitle(),
                 todo.getContents(),
                 todo.getWeather(),
-                new UserResponse(todo.getUser().getId(), todo.getUser().getEmail()),
+                new UserResponse(user.getId(), user.getEmail()),
                 todo.getCreatedAt(),
                 todo.getModifiedAt()
-        ));
+        );
     }
 
     public TodoResponse getTodo(long todoId) {
