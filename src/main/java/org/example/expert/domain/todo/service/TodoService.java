@@ -39,6 +39,9 @@ public class TodoService {
                 weather,
                 user
         );
+
+        newTodo.addManager(user);
+
         Todo savedTodo = todoRepository.save(newTodo);
 
         return new TodoSaveResponse(
