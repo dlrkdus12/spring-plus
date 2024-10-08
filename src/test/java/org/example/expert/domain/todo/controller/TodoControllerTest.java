@@ -1,5 +1,6 @@
 package org.example.expert.domain.todo.controller;
 
+import org.example.expert.config.*;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
@@ -7,12 +8,15 @@ import org.example.expert.domain.todo.service.TodoService;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.enums.UserRole;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
 
@@ -29,6 +33,19 @@ class TodoControllerTest {
 
     @MockBean
     private TodoService todoService;
+
+    @MockBean
+    private GlobalExceptionHandler globalExceptionHandler;
+
+
+    @BeforeEach
+    public void init() {
+        // MockMvc 초기화
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new TodoController(todoService)) // TodoController에 TodoService 주입
+                .setControllerAdvice(globalExceptionHandler) // 예외 핸들러 추가
+                .build();
+    }
 
     @Test
     void todo_단건_조회에_성공한다() throws Exception {
@@ -60,18 +77,19 @@ class TodoControllerTest {
 
     @Test
     void todo_단건_조회_시_todo가_존재하지_않아_예외가_발생한다() throws Exception {
-        // given
+        // given - 사전 조건
         long todoId = 1L;
 
-        // when
+        // when - 동작 검증
         when(todoService.getTodo(todoId))
                 .thenThrow(new InvalidRequestException("Todo not found"));
 
-        // then
-        mockMvc.perform(get("/todos/{todoId}", todoId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(HttpStatus.OK.name()))
-                .andExpect(jsonPath("$.code").value(HttpStatus.OK.value()))
+        // then - 테스트 결과 검증
+        mockMvc.perform(get("/todos/{todoId}", todoId)
+                        .contentType(MediaType.APPLICATION_JSON_VALUE))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(HttpStatus.NOT_FOUND.name()))
+                .andExpect(jsonPath("$.code").value(HttpStatus.NOT_FOUND.value()))
                 .andExpect(jsonPath("$.message").value("Todo not found"));
     }
 }
