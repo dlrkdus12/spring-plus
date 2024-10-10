@@ -11,6 +11,7 @@ import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
+import org.example.expert.domain.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,11 +26,13 @@ import java.time.LocalDateTime;
 public class TodoService {
 
     private final TodoRepository todoRepository;
+    private final UserRepository userRepository;
     private final WeatherClient weatherClient;
 
     @Transactional
     public TodoSaveResponse saveTodo(AuthUser authUser, TodoSaveRequest todoSaveRequest) {
         User user = User.fromAuthUser(authUser);
+        user = userRepository.save(user);
 
         String weather = weatherClient.getTodayWeather();
 
@@ -40,14 +43,13 @@ public class TodoService {
                 user
         );
 
-        newTodo.addManager(user);
-
-        Todo savedTodo = todoRepository.save(newTodo);
+        // Todo 저장
+        Todo saveTodo = todoRepository.save(newTodo);
 
         return new TodoSaveResponse(
-                savedTodo.getId(),
-                savedTodo.getTitle(),
-                savedTodo.getContents(),
+                saveTodo.getId(),
+                saveTodo.getTitle(),
+                saveTodo.getContents(),
                 weather,
                 new UserResponse(user.getId(), user.getEmail())
         );

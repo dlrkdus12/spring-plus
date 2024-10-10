@@ -22,6 +22,7 @@ public class User extends Timestamped {
     @Enumerated(EnumType.STRING)
     private UserRole userRole;
 
+    // signup
     public User(String nickname, String email, String password, UserRole userRole) {
         this.nickname = nickname;
         this.email = email;
@@ -29,14 +30,20 @@ public class User extends Timestamped {
         this.userRole = userRole;
     }
 
-    private User(Long id, String email, UserRole userRole) {
-        this.id = id;
+    private User(String email, UserRole userRole) {
         this.email = email;
         this.userRole = userRole;
     }
 
     public static User fromAuthUser(AuthUser authUser) {
-        return new User(authUser.getId(), authUser.getEmail(), authUser.getUserRole());
+        String authority = authUser.getAuthorities().stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("No authorities found"))
+                .getAuthority();
+
+        UserRole role = UserRole.of(authority);
+
+        return new User(authUser.getEmail(), role);
     }
 
     public void changePassword(String password) {

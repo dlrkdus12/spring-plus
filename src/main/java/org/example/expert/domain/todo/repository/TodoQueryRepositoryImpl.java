@@ -16,7 +16,6 @@ import java.util.List;
 import static org.example.expert.domain.comment.entity.QComment.comment;
 import static org.example.expert.domain.manager.entity.QManager.manager;
 import static org.example.expert.domain.todo.entity.QTodo.todo;
-import static org.example.expert.domain.user.entity.QUser.user;
 
 @Repository
 @RequiredArgsConstructor
@@ -39,7 +38,7 @@ public class TodoQueryRepositoryImpl implements TodoQueryRepository {
                 .select(todo)
                 .distinct()
                 .from(todo)
-                .leftJoin(todo.managers, manager).fetchJoin()
+                .leftJoin(todo.manager, manager).fetchJoin()
                 .leftJoin(todo.comments, comment)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())

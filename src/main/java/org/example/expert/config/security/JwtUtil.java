@@ -1,4 +1,4 @@
-package org.example.expert.config;
+package org.example.expert.config.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -42,7 +42,7 @@ public class JwtUtil {
                         .setSubject(String.valueOf(userId))
                         .claim("nickname", nickname)
                         .claim("email", email)
-                        .claim("userRole", userRole)
+                        .claim("userRole", userRole.getUserRole())
                         .setExpiration(new Date(date.getTime() + TOKEN_TIME))
                         .setIssuedAt(date) // 발급일
                         .signWith(key, signatureAlgorithm) // 암호화 알고리즘
@@ -53,6 +53,7 @@ public class JwtUtil {
         if (StringUtils.hasText(tokenValue) && tokenValue.startsWith(BEARER_PREFIX)) {
             return tokenValue.substring(7);
         }
+        log.error("Not Found Token");
         throw new ServerException("Not Found Token");
     }
 
